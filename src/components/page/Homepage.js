@@ -9,6 +9,7 @@ import AnalyticsDashboard from '../AnalyticsDashboard';
 import PostsGrid from '../ui/PostsGrid';
 import Footer from '../ui/Footer';
 import CachedProfilesSidebar from '../ui/CachedProfilesSidebar';
+import PostComparisonSidebar from '../ui/PostComparisonSidebar';
 
 export default function Homepage() {
   const [username, setUsername] = useState('');
@@ -19,6 +20,7 @@ export default function Homepage() {
   const [error, setError] = useState('');
   const [cacheInfo, setCacheInfo] = useState(null);
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [comparisonSidebarVisible, setComparisonSidebarVisible] = useState(false);
 
   const handleProfileSelect = (selectedUsername) => {
     setUsername(selectedUsername);
@@ -161,17 +163,53 @@ export default function Homepage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800">
       <div className="flex h-screen">
+        {/* Left Sidebar - Post Comparison */}
+        <div className={`fixed top-0 left-0 h-full z-50 transform transition-transform duration-300 ease-in-out ${
+          comparisonSidebarVisible ? 'translate-x-0' : '-translate-x-full'
+        }`}>
+          <PostComparisonSidebar
+            posts={data?.posts}
+            enhancedPosts={finalResult?.enhancedPosts}
+            isVisible={comparisonSidebarVisible}
+          />
+        </div>
+
         {/* Main Content Area */}
-        <div className={`flex-1 overflow-y-auto transition-all duration-300 ${sidebarVisible ? 'lg:mr-80' : ''}`}>
+        <div className={`flex-1 overflow-y-auto transition-all duration-300 ${
+          comparisonSidebarVisible ? 'lg:ml-80' : ''
+        } ${sidebarVisible ? 'lg:mr-80' : ''}`}>
           <div className="max-w-[95%] mx-auto px-2 py-8">
             <Header />
             
-            {/* Sidebar Toggle Button */}
-            <div className="flex justify-end mb-4">
+            {/* Sidebar Toggle Buttons */}
+            <div className="flex justify-between mb-4">
+              {/* Left Sidebar Toggle */}
+              <button
+                onClick={() => setComparisonSidebarVisible(!comparisonSidebarVisible)}
+                disabled={!data?.posts || data.posts.length === 0}
+                className="bg-gray-800/80 hover:bg-gray-700/80 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-xl border border-gray-600/50 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg"
+              >
+                <svg 
+                  className={`w-4 h-4 transition-transform duration-200 ${comparisonSidebarVisible ? '' : 'rotate-180'}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M5 12h14" />
+                </svg>
+                <span className="text-sm">
+                  {comparisonSidebarVisible ? 'Hide' : 'Show'} Post Comparison
+                </span>
+              </button>
+
+              {/* Right Sidebar Toggle */}
               <button
                 onClick={() => setSidebarVisible(!sidebarVisible)}
                 className="bg-gray-800/80 hover:bg-gray-700/80 backdrop-blur-xl border border-gray-600/50 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg"
               >
+                <span className="text-sm">
+                  {sidebarVisible ? 'Hide' : 'Show'} Cached Profiles
+                </span>
                 <svg 
                   className={`w-4 h-4 transition-transform duration-200 ${sidebarVisible ? 'rotate-180' : ''}`} 
                   fill="none" 
@@ -180,9 +218,6 @@ export default function Homepage() {
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
                 </svg>
-                <span className="text-sm">
-                  {sidebarVisible ? 'Hide' : 'Show'} Cached Profiles
-                </span>
               </button>
             </div>
             
@@ -282,7 +317,7 @@ export default function Homepage() {
           </div>
         </div>
 
-        {/* Sidebar */}
+        {/* Right Sidebar */}
         <div className={`fixed top-0 right-0 h-full z-50 transform transition-transform duration-300 ease-in-out ${
           sidebarVisible ? 'translate-x-0' : 'translate-x-full'
         }`}>
@@ -292,11 +327,17 @@ export default function Homepage() {
           />
         </div>
 
-        {/* Sidebar Overlay for Mobile */}
+        {/* Sidebar Overlays for Mobile */}
         {sidebarVisible && (
           <div 
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setSidebarVisible(false)}
+          />
+        )}
+        {comparisonSidebarVisible && (
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setComparisonSidebarVisible(false)}
           />
         )}
       </div>
