@@ -5,11 +5,10 @@ export default function SearchForm({ username, setUsername, loading, onSubmit })
   };
 
   const handleSuggestionClick = (suggestedUsername) => {
+    // Set the input field value for visual feedback
     setUsername(suggestedUsername);
-    // Small delay to ensure state is updated before submitting
-    setTimeout(() => {
-      onSubmit();
-    }, 100);
+    // Immediately call onSubmit with the suggested username
+    onSubmit(suggestedUsername);
   };
 
   const famousProfiles = [

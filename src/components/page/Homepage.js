@@ -16,25 +16,49 @@ export default function Homepage() {
   const [data, setData] = useState(null);
   const [finalResult, setFinalResult] = useState(null);
   const [error, setError] = useState('');
+  const [cacheInfo, setCacheInfo] = useState(null);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (suggestedUsername = null, forceRefresh = false) => {
+    // Use suggested username if provided, otherwise use state
+    const usernameToProcess = suggestedUsername || username;
+    
+    // If using suggested username, update the state immediately
+    if (suggestedUsername) {
+      setUsername(suggestedUsername);
+    }
+    
+    // Ensure we have a username
+    if (!usernameToProcess.trim()) {
+      setError('Please enter a username');
+      return;
+    }
+    
     setLoading(true);
     setError('');
     setData(null);
     setFinalResult(null);
     setLoadingMessage('');
+    setCacheInfo(null);
     
     try {
       // Step 1: Scrape the data
-      setLoadingMessage('🚀 Step 1/2: Scraping Instagram profile...');
-      console.log('🚀 Step 1: Starting scrape request for:', username);
+      if (forceRefresh) {
+        setLoadingMessage('� Refreshing data... This will take approximately 4-6 minutes.');
+      } else {
+        setLoadingMessage('🔍 Checking for cached data...');
+      }
+      
+      console.log('🚀 Step 1: Starting scrape request for:', usernameToProcess);
       
       const scrapeRes = await fetch('/api/scrape', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ 
+          username: usernameToProcess,
+          forceRefresh: forceRefresh
+        }),
       });
       
       if (!scrapeRes.ok) throw new Error('Failed to scrape');
@@ -48,9 +72,21 @@ export default function Homepage() {
         setLoadingMessage('');
         return;
       }
+
+      // Check if this is cached data
+      if (scrapeResult.fromCache) {
+        console.log('✅ Retrieved from cache instantly!');
+        setCacheInfo(scrapeResult.cacheInfo);
+        setLoadingMessage('⚡ Retrieved from cache - Processing with AI...');
+      } else {
+        console.log('🔄 Fresh data scraped');
+        if (!forceRefresh) {
+          setLoadingMessage('⏰ This is taking 4-6 minutes as this profile wasn\'t cached. We apologize for the inconvenience...');
+        }
+      }
       
       // Step 2: Process the scraped data through AI detail extraction
-      setLoadingMessage('🤖 Step 2/2: Processing with AI detail extraction...');
+      setLoadingMessage('🤖 Processing with AI analysis...');
       console.log('🤖 Step 2: Processing data through AI detail extraction...');
       
       const detailRes = await fetch('/api/AI/detailExtraction', {
@@ -105,6 +141,12 @@ export default function Homepage() {
     }
   };
 
+  const handleRefreshData = () => {
+    if (username) {
+      handleSubmit(username, true); // Force refresh
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800">
       <div className="max-w-[95%] mx-auto px-2 py-8">
@@ -135,6 +177,25 @@ export default function Homepage() {
           <div className="max-w-[98rem] mx-auto">
             <ProfileCard profile={data.profile} username={username} />
             
+            {/* Cache Info Display */}
+            {cacheInfo && (
+              <div className="w-full max-w-4xl mx-auto mt-6 mb-6">
+                <div className="bg-green-900/40 backdrop-blur-xl rounded-xl border border-green-500/30 p-4 shadow-2xl">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-green-200 font-medium">
+                        ⚡ Data served from cache - Retrieved instantly!
+                      </span>
+                    </div>
+                    <div className="text-xs text-green-300">
+                      Cache age: {cacheInfo.cacheAge} minutes | Accessed: {cacheInfo.accessCount} times
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* AI Analytics Dashboard - only show if we have enhanced posts */}
             {finalResult && finalResult.enhancedPosts && (
               <AnalyticsDashboard 
@@ -149,6 +210,37 @@ export default function Homepage() {
               enhancedPosts={finalResult?.enhancedPosts}
               message={data.message} 
             />
+            
+            {/* Refresh Data Button */}
+            <div className="w-full max-w-4xl mx-auto mt-8 mb-6">
+              <div className="bg-gray-800/80 backdrop-blur-xl rounded-xl border border-red-500/30 p-6 shadow-2xl">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    Want Fresh Data?
+                  </h3>
+                  <p className="text-gray-400 text-sm mb-4">
+                    Click below to refresh all data and get the latest insights. This will take approximately 4-6 minutes.
+                  </p>
+                  <button
+                    onClick={handleRefreshData}
+                    disabled={loading}
+                    className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
+                  >
+                    {loading ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        <span>Refreshing...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <span>🔄</span>
+                        <span>Refresh Data</span>
+                      </div>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
         

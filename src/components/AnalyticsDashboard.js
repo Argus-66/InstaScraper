@@ -120,9 +120,9 @@ const AnalyticsDashboard = ({ analytics, enhancedPosts = [], profileData = null 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             
             {/* Total Engagement */}
-            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-xl rounded-xl p-4 border border-gray-700/50 hover:border-red-500/40 transition-all duration-300 group hover:scale-105">
+            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-xl rounded-xl p-4 border border-gray-700/50 hover:border-red-500/40 transition-all duration-300 group">
               <div className="flex flex-col items-center text-center space-y-2">
-                <span className="text-4xl group-hover:scale-110 transition-transform duration-300">🚀</span>
+                <span className="text-4xl">🚀</span>
                 <div className="text-2xl font-bold text-green-400">{formatNumber(metrics.totalEngagement)}</div>
                 <div className="text-sm font-semibold text-white">Total Reach</div>
                 <div className="text-xs text-gray-400 leading-tight">Combined likes and comments across all posts</div>
@@ -130,9 +130,9 @@ const AnalyticsDashboard = ({ analytics, enhancedPosts = [], profileData = null 
             </div>
 
             {/* Average Likes */}
-            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-xl rounded-xl p-4 border border-gray-700/50 hover:border-red-500/40 transition-all duration-300 group hover:scale-105">
+            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-xl rounded-xl p-4 border border-gray-700/50 hover:border-red-500/40 transition-all duration-300 group">
               <div className="flex flex-col items-center text-center space-y-2">
-                <span className="text-4xl group-hover:scale-110 transition-transform duration-300">❤️</span>
+                <span className="text-4xl">❤️</span>
                 <div className="text-2xl font-bold text-red-400">{formatNumber(metrics.avgLikes)}</div>
                 <div className="text-sm font-semibold text-white">Avg Likes</div>
                 <div className="text-xs text-gray-400 leading-tight">Average likes received per post</div>
@@ -140,9 +140,9 @@ const AnalyticsDashboard = ({ analytics, enhancedPosts = [], profileData = null 
             </div>
 
             {/* Average Comments */}
-            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-xl rounded-xl p-4 border border-gray-700/50 hover:border-red-500/40 transition-all duration-300 group hover:scale-105">
+            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-xl rounded-xl p-4 border border-gray-700/50 hover:border-red-500/40 transition-all duration-300 group">
               <div className="flex flex-col items-center text-center space-y-2">
-                <span className="text-4xl group-hover:scale-110 transition-transform duration-300">💬</span>
+                <span className="text-4xl">💬</span>
                 <div className="text-2xl font-bold text-blue-400">{formatNumber(metrics.avgComments)}</div>
                 <div className="text-sm font-semibold text-white">Avg Comments</div>
                 <div className="text-xs text-gray-400 leading-tight">Average comments received per post</div>
@@ -150,9 +150,9 @@ const AnalyticsDashboard = ({ analytics, enhancedPosts = [], profileData = null 
             </div>
 
             {/* Posts Analyzed */}
-            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-xl rounded-xl p-4 border border-gray-700/50 hover:border-red-500/40 transition-all duration-300 group hover:scale-105">
+            <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-xl rounded-xl p-4 border border-gray-700/50 hover:border-red-500/40 transition-all duration-300 group">
               <div className="flex flex-col items-center text-center space-y-2">
-                <span className="text-4xl group-hover:scale-110 transition-transform duration-300">📊</span>
+                <span className="text-4xl">📊</span>
                 <div className="text-2xl font-bold text-purple-400">{enhancedPosts.length}</div>
                 <div className="text-sm font-semibold text-white">Posts Analyzed</div>
                 <div className="text-xs text-gray-400 leading-tight">Total posts scanned and analyzed by AI</div>
