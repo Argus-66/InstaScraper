@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
+import { getCollection, COLLECTIONS } from '@/lib/database';
 
 export async function POST(req) {
   try {
@@ -18,7 +19,8 @@ export async function POST(req) {
       });
     }
 
-    const { posts } = scrapeResult;
+    const { posts, profile } = scrapeResult;
+    const username = profile?.username;
     
     if (!posts || !Array.isArray(posts)) {
       console.log('⚠️ [DetailExtraction] No posts found');
@@ -26,6 +28,33 @@ export async function POST(req) {
         success: false,
         error: 'No posts found in scrape result'
       });
+    }
+
+    // Check if we already have AI-enhanced data in cache
+    if (username && scrapeResult.fromCache) {
+      try {
+        console.log(`🔍 [AI CACHE] Checking for cached AI analysis for @${username}...`);
+        const cacheCollection = await getCollection(COLLECTIONS.ANALYSIS_CACHE);
+        const cachedResult = await cacheCollection.findOne({ 
+          username: username.toLowerCase() 
+        });
+
+        if (cachedResult && cachedResult.enhancedPosts && cachedResult.enhancedPosts.length > 0) {
+          console.log(`✅ [AI CACHE HIT] Found cached AI analysis for @${username}! Serving instantly...`);
+          
+          return NextResponse.json({
+            success: true,
+            ...scrapeResult,
+            enhancedPosts: cachedResult.enhancedPosts,
+            processedAt: cachedResult.aiProcessedAt || new Date().toISOString(),
+            fromAICache: true
+          });
+        } else {
+          console.log(`❌ [AI CACHE MISS] No cached AI analysis for @${username}. Processing with AI...`);
+        }
+      } catch (cacheError) {
+        console.error('⚠️ [AI CACHE ERROR] Cache check failed, proceeding with AI analysis:', cacheError);
+      }
     }
 
     console.log(`🔍 [DetailExtraction] Processing ${posts.length} posts with comprehensive AI analysis...`);
@@ -38,7 +67,6 @@ export async function POST(req) {
     }
 
     const ai = new GoogleGenAI({});
-
     const enhancedPosts = [];
 
     // Process each post with comprehensive analysis
@@ -63,12 +91,40 @@ export async function POST(req) {
 
     console.log(`✅ [DetailExtraction] Completed processing ${enhancedPosts.length} posts`);
 
-    return NextResponse.json({
+    const result = {
       success: true,
       ...scrapeResult,
       enhancedPosts: enhancedPosts,
       processedAt: new Date().toISOString()
-    });
+    };
+
+    // Store AI analysis results in cache if we have a username
+    if (username) {
+      try {
+        console.log(`💾 [AI CACHE] Storing AI analysis for @${username}...`);
+        const cacheCollection = await getCollection(COLLECTIONS.ANALYSIS_CACHE);
+        
+        await cacheCollection.updateOne(
+          { username: username.toLowerCase() },
+          {
+            $set: {
+              username: username.toLowerCase(),
+              enhancedPosts: enhancedPosts,
+              aiProcessedAt: new Date().toISOString(),
+              lastAccessed: new Date()
+            }
+          },
+          { upsert: true }
+        );
+        
+        console.log(`✅ [AI CACHE] AI analysis cached for @${username}!`);
+      } catch (cacheError) {
+        console.error('⚠️ [AI CACHE] Failed to store AI analysis:', cacheError);
+        // Don't fail the request if caching fails
+      }
+    }
+
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error('❌ [DetailExtraction] API Error:', error);

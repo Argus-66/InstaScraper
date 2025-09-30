@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getCollection, COLLECTIONS } from '@/lib/database';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -15,19 +16,72 @@ export async function POST(request) {
 
         console.log(`🔍 [Demographics] Analyzing ${username} (${followers || 'unknown'} followers)`);
 
+        // Check if we already have cached demographics
+        try {
+            console.log(`🔍 [DEMOGRAPHICS CACHE] Checking for cached demographics for @${username}...`);
+            const cacheCollection = await getCollection(COLLECTIONS.ANALYSIS_CACHE);
+            const cachedResult = await cacheCollection.findOne({ 
+                username: username.toLowerCase() 
+            });
+
+            if (cachedResult && cachedResult.demographics) {
+                console.log(`✅ [DEMOGRAPHICS CACHE HIT] Found cached demographics for @${username}! Serving instantly...`);
+                
+                return Response.json({
+                    demographics: cachedResult.demographics,
+                    isAnalyzed: cachedResult.demographicsAnalyzed || true,
+                    note: cachedResult.demographicsNote,
+                    fromCache: true
+                });
+            } else {
+                console.log(`❌ [DEMOGRAPHICS CACHE MISS] No cached demographics for @${username}. Generating new analysis...`);
+            }
+        } catch (cacheError) {
+            console.error('⚠️ [DEMOGRAPHICS CACHE ERROR] Cache check failed, proceeding with fresh analysis:', cacheError);
+        }
+
         // If followers are low (under 10k), return generic local data
         if (followers && followers < 10000) {
             console.log(`📊 [Demographics] Small account detected, using generic distribution`);
-            return Response.json({
-                demographics: [
-                    { country: 'Local Region', percentage: 65, color: '#64748b' },
-                    { country: 'India', percentage: 20, color: '#ff9933' },
-                    { country: 'United States', percentage: 10, color: '#b22234' },
-                    { country: 'Others', percentage: 5, color: '#6b7280' }
-                ],
+            
+            const smallAccountDemographics = [
+                { country: 'Local Region', percentage: 65, color: '#64748b' },
+                { country: 'India', percentage: 20, color: '#ff9933' },
+                { country: 'United States', percentage: 10, color: '#b22234' },
+                { country: 'Others', percentage: 5, color: '#6b7280' }
+            ];
+
+            const result = {
+                demographics: smallAccountDemographics,
                 isAnalyzed: false,
                 note: 'Standard regional distribution for smaller accounts'
-            });
+            };
+
+            // Store small account demographics in cache too
+            try {
+                console.log(`💾 [DEMOGRAPHICS CACHE] Storing small account demographics for @${username}...`);
+                const cacheCollection = await getCollection(COLLECTIONS.ANALYSIS_CACHE);
+                
+                await cacheCollection.updateOne(
+                    { username: username.toLowerCase() },
+                    {
+                        $set: {
+                            demographics: smallAccountDemographics,
+                            demographicsAnalyzed: false,
+                            demographicsNote: 'Standard regional distribution for smaller accounts',
+                            demographicsProcessedAt: new Date().toISOString(),
+                            lastAccessed: new Date()
+                        }
+                    },
+                    { upsert: true }
+                );
+                
+                console.log(`✅ [DEMOGRAPHICS CACHE] Small account demographics cached for @${username}!`);
+            } catch (cacheError) {
+                console.error('⚠️ [DEMOGRAPHICS CACHE] Failed to store small account demographics:', cacheError);
+            }
+
+            return Response.json(result);
         }
 
         // Add delay before API call
@@ -63,8 +117,8 @@ export async function POST(request) {
 
         console.log(`🤖 [Demographics] Sending AI request for ${username}...`);
         
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
+        const aiResult = await model.generateContent(prompt);
+        const response = await aiResult.response;
         const text = response.text();
         
         console.log(`✅ [Demographics] AI response received for ${username}`);
@@ -73,10 +127,37 @@ export async function POST(request) {
         const cleanText = text.replace(/```json|```/g, '').trim();
         const demographics = JSON.parse(cleanText);
 
-        return Response.json({
+        const result = {
             ...demographics,
             isAnalyzed: true
-        });
+        };
+
+        // Store demographics in cache
+        try {
+            console.log(`💾 [DEMOGRAPHICS CACHE] Storing demographics for @${username}...`);
+            const cacheCollection = await getCollection(COLLECTIONS.ANALYSIS_CACHE);
+            
+            await cacheCollection.updateOne(
+                { username: username.toLowerCase() },
+                {
+                    $set: {
+                        demographics: demographics.demographics,
+                        demographicsAnalyzed: true,
+                        demographicsNote: 'AI-generated audience analysis',
+                        demographicsProcessedAt: new Date().toISOString(),
+                        lastAccessed: new Date()
+                    }
+                },
+                { upsert: true }
+            );
+            
+            console.log(`✅ [DEMOGRAPHICS CACHE] Demographics cached for @${username}!`);
+        } catch (cacheError) {
+            console.error('⚠️ [DEMOGRAPHICS CACHE] Failed to store demographics:', cacheError);
+            // Don't fail the request if caching fails
+        }
+
+        return Response.json(result);
 
     } catch (error) {
         console.error(`❌ [Demographics] Error for ${username}:`, error);
@@ -98,6 +179,30 @@ export async function POST(request) {
             { country: 'Australia', percentage: 8, color: '#0057b7' },
             { country: 'Others', percentage: 7, color: '#6b7280' }
         ];
+
+        // Store fallback demographics in cache
+        try {
+            console.log(`💾 [DEMOGRAPHICS CACHE] Storing fallback demographics for @${username}...`);
+            const cacheCollection = await getCollection(COLLECTIONS.ANALYSIS_CACHE);
+            
+            await cacheCollection.updateOne(
+                { username: username.toLowerCase() },
+                {
+                    $set: {
+                        demographics: fallbackData,
+                        demographicsAnalyzed: false,
+                        demographicsNote: 'AI analysis failed, showing realistic fallback data',
+                        demographicsProcessedAt: new Date().toISOString(),
+                        lastAccessed: new Date()
+                    }
+                },
+                { upsert: true }
+            );
+            
+            console.log(`✅ [DEMOGRAPHICS CACHE] Fallback demographics cached for @${username}!`);
+        } catch (cacheError) {
+            console.error('⚠️ [DEMOGRAPHICS CACHE] Failed to store fallback demographics:', cacheError);
+        }
         
         return Response.json({
             demographics: fallbackData,
