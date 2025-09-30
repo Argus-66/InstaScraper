@@ -221,17 +221,11 @@ const AnalyticsDashboard = ({ analytics, enhancedPosts = [], profileData = null 
               <div className="space-y-3">
                 {metrics.topColors.slice(0, 4).map(({ color, count }, index) => (
                   <div key={color} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center space-x-2">
-                        <div 
-                          className="w-4 h-4 rounded-full border-2 border-gray-500 shadow-md flex-shrink-0"
-                          style={{ backgroundColor: color.includes('#') ? color : `var(--${color}, #6B7280)` }}
-                        ></div>
-                        <span className="text-gray-200 capitalize font-medium">{color}</span>
-                      </div>
-                      <span className="text-purple-400 font-bold">{count}</span>
+                    <div className="flex items-center justify-between text-sm min-w-0">
+                      <span className="text-gray-200 capitalize font-medium truncate">{color}</span>
+                      <span className="text-purple-400 font-bold flex-shrink-0 ml-2">{count}</span>
                     </div>
-                    <div className="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden ml-6">
+                    <div className="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden">
                       <div 
                         className="h-3 rounded-full transition-all duration-1000 ease-out shadow-lg"
                         style={{ 
