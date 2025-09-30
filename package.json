@@ -1,0 +1,30 @@
+{
+  "name": "scrapper",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@google/genai": "^1.21.0",
+    "@google/generative-ai": "^0.24.1",
+    "@sparticuz/chromium": "^131.0.1",
+    "mailparser": "^3.7.4",
+    "next": "15.5.4",
+    "node-imap": "^0.9.6",
+    "puppeteer": "^24.22.3",
+    "puppeteer-core": "^24.22.3",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.4",
+    "tailwindcss": "^4"
+  }
+}
