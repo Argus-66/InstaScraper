@@ -171,6 +171,7 @@ export default function Homepage() {
             posts={data?.posts}
             enhancedPosts={finalResult?.enhancedPosts}
             isVisible={comparisonSidebarVisible}
+            onHide={() => setComparisonSidebarVisible(false)}
           />
         </div>
 
@@ -181,44 +182,36 @@ export default function Homepage() {
           <div className="max-w-[95%] mx-auto px-2 py-8">
             <Header />
             
-            {/* Sidebar Toggle Buttons */}
-            <div className="flex justify-between mb-4">
-              {/* Left Sidebar Toggle */}
-              <button
-                onClick={() => setComparisonSidebarVisible(!comparisonSidebarVisible)}
-                disabled={!data?.posts || data.posts.length === 0}
-                className="bg-gray-800/80 hover:bg-gray-700/80 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-xl border border-gray-600/50 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg"
-              >
-                <svg 
-                  className={`w-4 h-4 transition-transform duration-200 ${comparisonSidebarVisible ? '' : 'rotate-180'}`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
+            {/* Floating Sidebar Toggle Buttons */}
+            <div className="fixed top-4 left-4 right-4 z-40 flex justify-between pointer-events-none">
+              {/* Left Sidebar Toggle - Only show when sidebar is hidden and posts exist */}
+              {!comparisonSidebarVisible && data?.posts && data.posts.length > 0 && (
+                <button
+                  onClick={() => setComparisonSidebarVisible(true)}
+                  className="bg-gray-800/90 hover:bg-gray-700/90 backdrop-blur-xl border border-gray-600/50 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-2xl pointer-events-auto"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M5 12h14" />
-                </svg>
-                <span className="text-sm">
-                  {comparisonSidebarVisible ? 'Hide' : 'Show'} Post Comparison
-                </span>
-              </button>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <span className="text-sm">Compare Posts</span>
+                </button>
+              )}
 
-              {/* Right Sidebar Toggle */}
-              <button
-                onClick={() => setSidebarVisible(!sidebarVisible)}
-                className="bg-gray-800/80 hover:bg-gray-700/80 backdrop-blur-xl border border-gray-600/50 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg"
-              >
-                <span className="text-sm">
-                  {sidebarVisible ? 'Hide' : 'Show'} Cached Profiles
-                </span>
-                <svg 
-                  className={`w-4 h-4 transition-transform duration-200 ${sidebarVisible ? 'rotate-180' : ''}`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
+              {/* Spacer - keeps right button aligned */}
+              {!(data?.posts && data.posts.length > 0 && !comparisonSidebarVisible) && <div></div>}
+
+              {/* Right Sidebar Toggle - Only show when sidebar is hidden */}
+              {!sidebarVisible && (
+                <button
+                  onClick={() => setSidebarVisible(true)}
+                  className="bg-gray-800/90 hover:bg-gray-700/90 backdrop-blur-xl border border-gray-600/50 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-2xl pointer-events-auto"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                </svg>
-              </button>
+                  <span className="text-sm">Cached Profiles</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </button>
+              )}
             </div>
             
             <SearchForm 
@@ -324,6 +317,7 @@ export default function Homepage() {
           <CachedProfilesSidebar 
             onProfileSelect={handleProfileSelect}
             currentUsername={username}
+            onHide={() => setSidebarVisible(false)}
           />
         </div>
 

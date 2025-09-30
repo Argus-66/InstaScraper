@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-export default function CachedProfilesSidebar({ onProfileSelect, currentUsername }) {
+export default function CachedProfilesSidebar({ onProfileSelect, currentUsername, onHide }) {
   const [cachedProfiles, setCachedProfiles] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -51,12 +51,24 @@ export default function CachedProfilesSidebar({ onProfileSelect, currentUsername
     <div className="w-80 h-full bg-gray-900/80 backdrop-blur-xl border-l border-gray-700/50 overflow-hidden flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-gray-700/50">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <h3 className="text-lg font-semibold text-white">Cached Profiles</h3>
-          <span className="bg-red-600/20 text-red-400 text-xs px-2 py-1 rounded-full">
-            {cachedProfiles.length}
-          </span>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <h3 className="text-lg font-semibold text-white">Cached Profiles</h3>
+            <span className="bg-red-600/20 text-red-400 text-xs px-2 py-1 rounded-full">
+              {cachedProfiles.length}
+            </span>
+          </div>
+          
+          {/* Hide Button */}
+          <button
+            onClick={onHide}
+            className="p-2 hover:bg-gray-700/50 rounded-lg transition-all duration-200 text-gray-400 hover:text-white"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
         
         {/* Search Bar */}
