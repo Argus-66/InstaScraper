@@ -8,6 +8,7 @@ import ProfileCard from '../ui/ProfileCard';
 import AnalyticsDashboard from '../AnalyticsDashboard';
 import PostsGrid from '../ui/PostsGrid';
 import Footer from '../ui/Footer';
+import CachedProfilesSidebar from '../ui/CachedProfilesSidebar';
 
 export default function Homepage() {
   const [username, setUsername] = useState('');
@@ -17,6 +18,16 @@ export default function Homepage() {
   const [finalResult, setFinalResult] = useState(null);
   const [error, setError] = useState('');
   const [cacheInfo, setCacheInfo] = useState(null);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+
+  const handleProfileSelect = (selectedUsername) => {
+    setUsername(selectedUsername);
+    handleSubmit(selectedUsername);
+    // Hide sidebar on mobile after selection
+    if (window.innerWidth < 1024) {
+      setSidebarVisible(false);
+    }
+  };
 
   const handleSubmit = async (suggestedUsername = null, forceRefresh = false) => {
     // Use suggested username if provided, otherwise use state
@@ -149,102 +160,145 @@ export default function Homepage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800">
-      <div className="max-w-[95%] mx-auto px-2 py-8">
-        <Header />
-        
-        <SearchForm 
-          username={username}
-          setUsername={setUsername}
-          loading={loading}
-          onSubmit={handleSubmit}
-        />
-        
-        {/* Loading Message Display */}
-        {loading && loadingMessage && (
-          <div className="w-full max-w-4xl mx-auto mt-6">
-            <div className="bg-gray-800/80 backdrop-blur-xl rounded-xl border border-red-500/30 p-6 shadow-2xl">
-              <div className="flex items-center justify-center space-x-3">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500"></div>
-                <span className="text-gray-200 font-medium">{loadingMessage}</span>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <ErrorDisplay error={error} />
-        
-        {data && data.success && (
-          <div className="max-w-[98rem] mx-auto">
-            <ProfileCard profile={data.profile} username={username} />
+      <div className="flex h-screen">
+        {/* Main Content Area */}
+        <div className={`flex-1 overflow-y-auto transition-all duration-300 ${sidebarVisible ? 'lg:mr-80' : ''}`}>
+          <div className="max-w-[95%] mx-auto px-2 py-8">
+            <Header />
             
-            {/* Cache Info Display */}
-            {cacheInfo && (
-              <div className="w-full max-w-4xl mx-auto mt-6 mb-6">
-                <div className="bg-green-900/40 backdrop-blur-xl rounded-xl border border-green-500/30 p-4 shadow-2xl">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-green-200 font-medium">
-                        ⚡ Data served from cache - Retrieved instantly!
-                      </span>
+            {/* Sidebar Toggle Button */}
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={() => setSidebarVisible(!sidebarVisible)}
+                className="bg-gray-800/80 hover:bg-gray-700/80 backdrop-blur-xl border border-gray-600/50 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg"
+              >
+                <svg 
+                  className={`w-4 h-4 transition-transform duration-200 ${sidebarVisible ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+                <span className="text-sm">
+                  {sidebarVisible ? 'Hide' : 'Show'} Cached Profiles
+                </span>
+              </button>
+            </div>
+            
+            <SearchForm 
+              username={username}
+              setUsername={setUsername}
+              loading={loading}
+              onSubmit={handleSubmit}
+            />
+            
+            {/* Loading Message Display */}
+            {loading && loadingMessage && (
+              <div className="w-full max-w-4xl mx-auto mt-6">
+                <div className="bg-gray-800/80 backdrop-blur-xl rounded-xl border border-red-500/30 p-6 shadow-2xl">
+                  <div className="flex items-center justify-center space-x-3">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500"></div>
+                    <span className="text-gray-200 font-medium">{loadingMessage}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <ErrorDisplay error={error} />
+            
+            {data && data.success && (
+              <div className="max-w-[98rem] mx-auto">
+                <ProfileCard profile={data.profile} username={username} />
+                
+                {/* Cache Info Display */}
+                {cacheInfo && (
+                  <div className="w-full max-w-4xl mx-auto mt-6 mb-6">
+                    <div className="bg-green-900/40 backdrop-blur-xl rounded-xl border border-green-500/30 p-4 shadow-2xl">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                          <span className="text-green-200 font-medium">
+                            ⚡ Data served from cache - Retrieved instantly!
+                          </span>
+                        </div>
+                        <div className="text-xs text-green-300">
+                          Cache age: {cacheInfo.cacheAge} minutes | Accessed: {cacheInfo.accessCount} times
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs text-green-300">
-                      Cache age: {cacheInfo.cacheAge} minutes | Accessed: {cacheInfo.accessCount} times
+                  </div>
+                )}
+                
+                {/* AI Analytics Dashboard - only show if we have enhanced posts */}
+                {finalResult && finalResult.enhancedPosts && (
+                  <AnalyticsDashboard 
+                    analytics={finalResult.analytics || data.analytics}
+                    enhancedPosts={finalResult.enhancedPosts}
+                    profileData={data.profile}
+                  />
+                )}
+                
+                <PostsGrid 
+                  posts={data.posts}
+                  enhancedPosts={finalResult?.enhancedPosts}
+                  message={data.message} 
+                />
+                
+                {/* Refresh Data Button */}
+                <div className="w-full max-w-4xl mx-auto mt-8 mb-6">
+                  <div className="bg-gray-800/80 backdrop-blur-xl rounded-xl border border-red-500/30 p-6 shadow-2xl">
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-white mb-2">
+                        Want Fresh Data?
+                      </h3>
+                      <p className="text-gray-400 text-sm mb-4">
+                        Click below to refresh all data and get the latest insights. This will take approximately 4-6 minutes.
+                      </p>
+                      <button
+                        onClick={handleRefreshData}
+                        disabled={loading}
+                        className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
+                      >
+                        {loading ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                            <span>Refreshing...</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <span>🔄</span>
+                            <span>Refresh Data</span>
+                          </div>
+                        )}
+                      </button>
                     </div>
                   </div>
                 </div>
               </div>
             )}
             
-            {/* AI Analytics Dashboard - only show if we have enhanced posts */}
-            {finalResult && finalResult.enhancedPosts && (
-              <AnalyticsDashboard 
-                analytics={finalResult.analytics || data.analytics}
-                enhancedPosts={finalResult.enhancedPosts}
-                profileData={data.profile}
-              />
-            )}
-            
-            <PostsGrid 
-              posts={data.posts}
-              enhancedPosts={finalResult?.enhancedPosts}
-              message={data.message} 
-            />
-            
-            {/* Refresh Data Button */}
-            <div className="w-full max-w-4xl mx-auto mt-8 mb-6">
-              <div className="bg-gray-800/80 backdrop-blur-xl rounded-xl border border-red-500/30 p-6 shadow-2xl">
-                <div className="text-center">
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    Want Fresh Data?
-                  </h3>
-                  <p className="text-gray-400 text-sm mb-4">
-                    Click below to refresh all data and get the latest insights. This will take approximately 4-6 minutes.
-                  </p>
-                  <button
-                    onClick={handleRefreshData}
-                    disabled={loading}
-                    className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
-                  >
-                    {loading ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        <span>Refreshing...</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-2">
-                        <span>🔄</span>
-                        <span>Refresh Data</span>
-                      </div>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <Footer />
           </div>
+        </div>
+
+        {/* Sidebar */}
+        <div className={`fixed top-0 right-0 h-full z-50 transform transition-transform duration-300 ease-in-out ${
+          sidebarVisible ? 'translate-x-0' : 'translate-x-full'
+        }`}>
+          <CachedProfilesSidebar 
+            onProfileSelect={handleProfileSelect}
+            currentUsername={username}
+          />
+        </div>
+
+        {/* Sidebar Overlay for Mobile */}
+        {sidebarVisible && (
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setSidebarVisible(false)}
+          />
         )}
-        
-        <Footer />
       </div>
     </div>
   );
