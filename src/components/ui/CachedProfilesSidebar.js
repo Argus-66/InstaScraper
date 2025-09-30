@@ -167,14 +167,11 @@ export default function CachedProfilesSidebar({ onProfileSelect, currentUsername
                   </div>
                 </div>
                 
-                {/* Quick Stats */}
-                {profile.profileData && (
+                {/* Quick Stats - Only show if we have follower data */}
+                {profile.profileData && profile.profileData.followers && (
                   <div className="flex items-center justify-between text-xs text-gray-500 mt-2 pt-2 border-t border-gray-700/30">
                     <span>
-                      {profile.profileData.followers ? 
-                        `${(profile.profileData.followers / 1000000).toFixed(1)}M` : 
-                        'N/A'
-                      } followers
+                      {(profile.profileData.followers / 1000000).toFixed(1)}M followers
                     </span>
                     <span>
                       {profile.posts ? profile.posts.length : 0} posts
