@@ -71,6 +71,22 @@ export default function SearchForm({ username, setUsername, loading, onSubmit })
           )}
         </button>
 
+        {/* Processing Time Notice */}
+        <div className="mt-4 p-4 bg-gray-800/60 backdrop-blur-sm rounded-lg border border-gray-600/30">
+          <div className="flex items-start gap-3">
+            <div className="text-yellow-400 text-lg mt-0.5">⏱️</div>
+            <div>
+              <p className="text-sm text-gray-300 font-medium mb-1">
+                Processing Time Notice
+              </p>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                New profiles may take <span className="text-yellow-400 font-semibold">6-7 minutes</span> for complete AI analysis. 
+                Cached profiles load instantly! Sorry for any inconvenience.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Famous Profiles Suggestions */}
         <div className="mt-8 pt-6 border-t border-gray-600/30">
           <div className="text-center mb-4">
