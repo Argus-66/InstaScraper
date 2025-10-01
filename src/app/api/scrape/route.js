@@ -34,7 +34,7 @@ export async function POST(request) {
       );
     }
 
-    const normalizedUsername = username.toLowerCase();
+    const normalizedUsername = username?.toLowerCase() || '';
     
     // Check cache first (unless force refresh)
     if (!forceRefresh) {

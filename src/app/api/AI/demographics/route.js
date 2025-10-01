@@ -7,8 +7,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export async function POST(request) {
+    let username, followers;
+    
     try {
-        const { username, followers } = await request.json();
+        ({ username, followers } = await request.json());
 
         if (!username) {
             return Response.json({ error: 'Username is required' }, { status: 400 });
@@ -21,7 +23,7 @@ export async function POST(request) {
             console.log(`🔍 [DEMOGRAPHICS CACHE] Checking for cached demographics for @${username}...`);
             const cacheCollection = await getCollection(COLLECTIONS.ANALYSIS_CACHE);
             const cachedResult = await cacheCollection.findOne({ 
-                username: username.toLowerCase() 
+                username: username?.toLowerCase() || '' 
             });
 
             if (cachedResult && cachedResult.demographics) {
@@ -42,19 +44,20 @@ export async function POST(request) {
 
         // If followers are low (under 10k), return generic local data
         if (followers && followers < 10000) {
-            console.log(`📊 [Demographics] Small account detected, using generic distribution`);
+            console.log(`📊 [Demographics] Small account detected, using India-focused distribution`);
             
             const smallAccountDemographics = [
-                { country: 'Local Region', percentage: 65, color: '#64748b' },
-                { country: 'India', percentage: 20, color: '#ff9933' },
-                { country: 'United States', percentage: 10, color: '#b22234' },
-                { country: 'Others', percentage: 5, color: '#6b7280' }
+                { country: 'India', percentage: 95, color: '#ff9933' },
+                { country: 'United States', percentage: 2, color: '#b22234' },
+                { country: 'United Kingdom', percentage: 1, color: '#012169' },
+                { country: 'Sri Lanka', percentage: 1, color: '#ffb300' },
+                { country: 'Nepal', percentage: 1, color: '#dc143c' }
             ];
 
             const result = {
                 demographics: smallAccountDemographics,
                 isAnalyzed: false,
-                note: 'Standard regional distribution for smaller accounts'
+                note: 'India-focused distribution for smaller accounts'
             };
 
             // Store small account demographics in cache too
@@ -63,12 +66,12 @@ export async function POST(request) {
                 const cacheCollection = await getCollection(COLLECTIONS.ANALYSIS_CACHE);
                 
                 await cacheCollection.updateOne(
-                    { username: username.toLowerCase() },
+                    { username: username?.toLowerCase() || '' },
                     {
                         $set: {
                             demographics: smallAccountDemographics,
                             demographicsAnalyzed: false,
-                            demographicsNote: 'Standard regional distribution for smaller accounts',
+                            demographicsNote: 'India-focused distribution for smaller accounts',
                             demographicsProcessedAt: new Date().toISOString(),
                             lastAccessed: new Date()
                         }
@@ -138,7 +141,7 @@ export async function POST(request) {
             const cacheCollection = await getCollection(COLLECTIONS.ANALYSIS_CACHE);
             
             await cacheCollection.updateOne(
-                { username: username.toLowerCase() },
+                { username: username?.toLowerCase() || '' },
                 {
                     $set: {
                         demographics: demographics.demographics,
@@ -186,7 +189,7 @@ export async function POST(request) {
             const cacheCollection = await getCollection(COLLECTIONS.ANALYSIS_CACHE);
             
             await cacheCollection.updateOne(
-                { username: username.toLowerCase() },
+                { username: username?.toLowerCase() || '' },
                 {
                     $set: {
                         demographics: fallbackData,

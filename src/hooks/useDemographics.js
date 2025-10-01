@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export const useDemographics = (username, followers) => {
   const [demographics, setDemographics] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchDemographics = async () => {
+  const fetchDemographics = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -44,12 +44,12 @@ export const useDemographics = (username, followers) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [username, followers]);
 
   useEffect(() => {
     if (!username) return;
     fetchDemographics();
-  }, [username, followers]);
+  }, [username, followers, fetchDemographics]);
 
   return { 
     demographics, 

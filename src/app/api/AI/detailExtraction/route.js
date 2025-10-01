@@ -19,8 +19,7 @@ export async function POST(req) {
       });
     }
 
-    const { posts, profile } = scrapeResult;
-    const username = profile?.username;
+    const { posts } = scrapeResult;
     
     if (!posts || !Array.isArray(posts)) {
       console.log('⚠️ [DetailExtraction] No posts found');
@@ -28,33 +27,6 @@ export async function POST(req) {
         success: false,
         error: 'No posts found in scrape result'
       });
-    }
-
-    // Check if we already have AI-enhanced data in cache
-    if (username && scrapeResult.fromCache) {
-      try {
-        console.log(`🔍 [AI CACHE] Checking for cached AI analysis for @${username}...`);
-        const cacheCollection = await getCollection(COLLECTIONS.ANALYSIS_CACHE);
-        const cachedResult = await cacheCollection.findOne({ 
-          username: username.toLowerCase() 
-        });
-
-        if (cachedResult && cachedResult.enhancedPosts && cachedResult.enhancedPosts.length > 0) {
-          console.log(`✅ [AI CACHE HIT] Found cached AI analysis for @${username}! Serving instantly...`);
-          
-          return NextResponse.json({
-            success: true,
-            ...scrapeResult,
-            enhancedPosts: cachedResult.enhancedPosts,
-            processedAt: cachedResult.aiProcessedAt || new Date().toISOString(),
-            fromAICache: true
-          });
-        } else {
-          console.log(`❌ [AI CACHE MISS] No cached AI analysis for @${username}. Processing with AI...`);
-        }
-      } catch (cacheError) {
-        console.error('⚠️ [AI CACHE ERROR] Cache check failed, proceeding with AI analysis:', cacheError);
-      }
     }
 
     console.log(`🔍 [DetailExtraction] Processing ${posts.length} posts with comprehensive AI analysis...`);
@@ -66,7 +38,10 @@ export async function POST(req) {
       return processFallback(scrapeResult, posts);
     }
 
-    const ai = new GoogleGenAI({});
+    const ai = new GoogleGenAI({
+      apiKey: apiKey
+    });
+
     const enhancedPosts = [];
 
     // Process each post with comprehensive analysis
@@ -91,40 +66,12 @@ export async function POST(req) {
 
     console.log(`✅ [DetailExtraction] Completed processing ${enhancedPosts.length} posts`);
 
-    const result = {
+    return NextResponse.json({
       success: true,
       ...scrapeResult,
       enhancedPosts: enhancedPosts,
       processedAt: new Date().toISOString()
-    };
-
-    // Store AI analysis results in cache if we have a username
-    if (username) {
-      try {
-        console.log(`💾 [AI CACHE] Storing AI analysis for @${username}...`);
-        const cacheCollection = await getCollection(COLLECTIONS.ANALYSIS_CACHE);
-        
-        await cacheCollection.updateOne(
-          { username: username.toLowerCase() },
-          {
-            $set: {
-              username: username.toLowerCase(),
-              enhancedPosts: enhancedPosts,
-              aiProcessedAt: new Date().toISOString(),
-              lastAccessed: new Date()
-            }
-          },
-          { upsert: true }
-        );
-        
-        console.log(`✅ [AI CACHE] AI analysis cached for @${username}!`);
-      } catch (cacheError) {
-        console.error('⚠️ [AI CACHE] Failed to store AI analysis:', cacheError);
-        // Don't fail the request if caching fails
-      }
-    }
-
-    return NextResponse.json(result);
+    });
 
   } catch (error) {
     console.error('❌ [DetailExtraction] API Error:', error);
@@ -136,6 +83,25 @@ export async function POST(req) {
 }
 
 async function processPostComprehensive(ai, post, index) {
+  // Check if we have cached AI analysis for this post
+  try {
+    const cacheCollection = await getCollection(COLLECTIONS.ANALYSIS_CACHE);
+    const postKey = `${post.url}_${post.description}`.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 100);
+    
+    const cachedAnalysis = await cacheCollection.findOne({ 
+      postKey: postKey 
+    });
+
+    if (cachedAnalysis && cachedAnalysis.aiAnalysis) {
+      console.log(`✅ [AI CACHE HIT] Using cached analysis for post ${index + 1}`);
+      return cachedAnalysis.aiAnalysis;
+    }
+    
+    console.log(`❌ [AI CACHE MISS] Generating new analysis for post ${index + 1}`);
+  } catch (cacheError) {
+    console.log('⚠️ [AI CACHE ERROR] Cache check failed, proceeding with fresh analysis:', cacheError.message);
+  }
+
   const prompt = `
 You are an expert Instagram content analyst. Analyze this post comprehensively and provide detailed insights.
 
@@ -185,12 +151,12 @@ RULES:
 
   try {
     // Use the new @google/genai API
-    console.log(`🔄 [DetailExtraction] Using model: gemini-2.5-flash`);
+    console.log(`🔄 [DetailExtraction] Using model: models/gemini-2.5-flash`);
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "models/gemini-2.5-flash",
       contents: prompt
     });
-    console.log(`✅ [DetailExtraction] Success with model: gemini-2.5-flash`);
+    console.log(`✅ [DetailExtraction] Success with model: models/gemini-2.5-flash`);
 
     const text = response.text;
 
@@ -211,6 +177,31 @@ RULES:
           analysis: parsed.analysis || 'Content analysis not available',
           imageLevelAnalysis: parsed.imageLevelAnalysis || createFallbackImageAnalysis()
         };
+
+        // Cache successful AI analysis
+        try {
+          const cacheCollection = await getCollection(COLLECTIONS.ANALYSIS_CACHE);
+          const postKey = `${post.url}_${post.description}`.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 100);
+          
+          await cacheCollection.updateOne(
+            { postKey: postKey },
+            {
+              $set: {
+                aiAnalysis: {
+                  ...post,
+                  ...enhancedData
+                },
+                cachedAt: new Date(),
+                lastAccessed: new Date()
+              }
+            },
+            { upsert: true }
+          );
+          
+          console.log(`✅ [AI CACHE] Analysis cached for post ${index + 1}`);
+        } catch (cacheError) {
+          console.log('⚠️ [AI CACHE ERROR] Failed to cache analysis:', cacheError.message);
+        }
 
         return {
           ...post,  // Keep original post data

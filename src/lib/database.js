@@ -43,7 +43,7 @@ export const COLLECTIONS = {
 
 // Cache entry structure
 export const createCacheEntry = (username, profileData, analytics, posts, enhancedPosts, scrapedAt) => ({
-  username: username.toLowerCase(),
+  username: username?.toLowerCase() || '',
   profileData,
   analytics,
   posts,
@@ -58,7 +58,7 @@ export const updateLastAccessed = async (username) => {
   try {
     const collection = await getCollection(COLLECTIONS.ANALYSIS_CACHE);
     await collection.updateOne(
-      { username: username.toLowerCase() },
+      { username: username?.toLowerCase() || '' },
       { 
         $set: { lastAccessed: new Date() },
         $inc: { accessCount: 1 }
